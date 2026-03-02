@@ -107,6 +107,7 @@ class CallkitNotificationManager(private val context: Context) {
         notificationBuilder.setAutoCancel(false)
         notificationBuilder.setChannelId(NOTIFICATION_CHANNEL_ID_INCOMING)
         notificationBuilder.setDefaults(NotificationCompat.DEFAULT_VIBRATE)
+        notificationBuilder.setVibrate(longArrayOf(0L, 1000L, 500L, 1000L))
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             notificationBuilder.setCategory(NotificationCompat.CATEGORY_CALL)
             notificationBuilder.priority = NotificationCompat.PRIORITY_MAX
@@ -120,7 +121,7 @@ class CallkitNotificationManager(private val context: Context) {
                 0L
             )
         )
-        notificationBuilder.setOnlyAlertOnce(true)
+        notificationBuilder.setOnlyAlertOnce(false)
         notificationBuilder.setSound(null)
         notificationBuilder.setFullScreenIntent(
             getActivityPendingIntent(notificationId, data), true
@@ -455,11 +456,14 @@ class CallkitNotificationManager(private val context: Context) {
         incomingCallChannelName: String,
         missedCallChannelName: String,
     ) {
+        val incomingVibrationPattern = longArrayOf(0L, 1000L, 500L, 1000L)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             getNotificationManager().apply {
                 var channelCall = getNotificationChannel(NOTIFICATION_CHANNEL_ID_INCOMING)
                 if (channelCall != null) {
                     channelCall.setSound(null, null)
+                    channelCall.enableVibration(true)
+                    channelCall.vibrationPattern = incomingVibrationPattern
                 } else {
                     channelCall = NotificationChannel(
                         NOTIFICATION_CHANNEL_ID_INCOMING,
@@ -467,8 +471,7 @@ class CallkitNotificationManager(private val context: Context) {
                         NotificationManager.IMPORTANCE_HIGH
                     ).apply {
                         description = ""
-                        vibrationPattern =
-                            longArrayOf(0, 1000, 500, 1000, 500)
+                        vibrationPattern = incomingVibrationPattern
                         lightColor = Color.RED
                         enableLights(true)
                         enableVibration(true)
@@ -476,9 +479,7 @@ class CallkitNotificationManager(private val context: Context) {
                     }
                 }
                 channelCall.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
-
                 channelCall.importance = NotificationManager.IMPORTANCE_HIGH
-
                 createNotificationChannel(channelCall)
 
                 val channelMissedCall = NotificationChannel(
