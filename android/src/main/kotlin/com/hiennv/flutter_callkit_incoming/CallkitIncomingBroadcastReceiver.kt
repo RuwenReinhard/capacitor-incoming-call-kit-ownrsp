@@ -128,7 +128,11 @@ class CallkitIncomingBroadcastReceiver : BroadcastReceiver() {
                         val soundPlayerServiceIntent =
                                 Intent(context, CallkitSoundPlayerService::class.java)
                         soundPlayerServiceIntent.putExtras(data)
-                        context.startService(soundPlayerServiceIntent)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            context.startForegroundService(soundPlayerServiceIntent)
+                        } else {
+                            context.startService(soundPlayerServiceIntent)
+                        }
                     }
                     val extras =
                         data.getSerializable(CallkitConstants.EXTRA_CALLKIT_EXTRA) as HashMap<*, *>
