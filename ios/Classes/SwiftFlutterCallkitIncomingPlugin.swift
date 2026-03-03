@@ -2,6 +2,7 @@ import UIKit
 import CallKit
 import Capacitor
 import AVFoundation
+import PushKit
 
 import Foundation
 import UserNotifications
@@ -19,7 +20,7 @@ enum PushNotificationsPermissions: String {
 
 @available(iOS 10.0, *)
 @objc(SwiftFlutterCallkitIncomingPlugin)
-public class SwiftFlutterCallkitIncomingPlugin: CAPPlugin, CAPBridgedPlugin, CXProviderDelegate {
+public class SwiftFlutterCallkitIncomingPlugin: CAPPlugin, CAPBridgedPlugin, CXProviderDelegate, PKPushRegistryDelegate {
     public let identifier = "SwiftFlutterCallkitIncomingPlugin"
     public let jsName = "FlutterCallkitIncoming"
     public let pluginMethods: [CAPPluginMethod] = [
@@ -37,6 +38,7 @@ public class SwiftFlutterCallkitIncomingPlugin: CAPPlugin, CAPBridgedPlugin, CXP
     ]
     private let notificationDelegateHandler = PushNotificationsHandler()
     private var appDelegateRegistrationCalled: Bool = false
+    private var voipRegistry: PKPushRegistry?
     
     static let ACTION_DID_UPDATE_DEVICE_PUSH_TOKEN_VOIP = "com.hiennv.flutter_callkit_incoming.DID_UPDATE_DEVICE_PUSH_TOKEN_VOIP"
     
@@ -136,6 +138,10 @@ public class SwiftFlutterCallkitIncomingPlugin: CAPPlugin, CAPBridgedPlugin, CXP
                                                selector: #selector(self.didFailToRegisterForRemoteNotificationsWithError(notification:)),
                                                name: .capacitorDidFailToRegisterForRemoteNotifications,
                                                object: nil)
+
+        voipRegistry = PKPushRegistry(queue: DispatchQueue.main)
+        voipRegistry?.delegate = self
+        voipRegistry?.desiredPushTypes = [.voIP]
     }
     
     public override init() {
@@ -939,4 +945,53 @@ public class SwiftFlutterCallkitIncomingPlugin: CAPPlugin, CAPBridgedPlugin, CXP
         self.sendEvent(SwiftFlutterCallkitIncomingPlugin.ACTION_CALL_TOGGLE_HOLD, [ "id": id, "isOnHold": isOnHold ])
     }
     
+}
+
+// MARK: - PKPushRegistryDelegate (VoIP Push für CallKit)
+extension SwiftFlutterCallkitIncomingPlugin {
+
+    public func pushRegistry(_ registry: PKPushRegistry, didUpdate pushCredentials: PKPushCredentials, for type: PKPushType) {
+        let token = pushCredentials.token.map { String(format: "%02x", $0) }.joined()
+        setDevicePushTokenVoIP(token)
+        notifyListeners(SwiftFlutterCallkitIncomingPlugin.ACTION_DID_UPDATE_DEVICE_PUSH_TOKEN_VOIP, data: ["token": token, "deviceTokenVoIP": token])
+    }
+
+    public func pushRegistry(_ registry: PKPushRegistry, didReceiveIncomingPushWith payload: PKPushPayload, for type: PKPushType, completion: @escaping () -> Void) {
+        guard type == .voIP else {
+            completion()
+            return
+        }
+        let payloadDict = payload.dictionaryPayload
+        var callDict: [String: Any]?
+        if let callDataString = payloadDict["call"] as? String,
+           let callData = callDataString.data(using: .utf8),
+           let parsed = try? JSONSerialization.jsonObject(with: callData) as? [String: Any] {
+            callDict = parsed
+        } else if let callObj = payloadDict["call"] as? [String: Any] {
+            callDict = callObj
+        }
+        guard let call = callDict else {
+            completion()
+            return
+        }
+        let callId = call["id"] as? String ?? UUID().uuidString
+        let callerName = call["nameCaller"] as? String ?? "Unbekannt"
+        let handle = call["handle"] as? String ?? callerName
+        let avatar = call["avatar"] as? String ?? ""
+        let typeValue = call["type"] as? Int ?? 1
+        let extra = (call["extra"] as? [String: Any]).map { $0 as NSDictionary } ?? [:] as NSDictionary
+        let args: [String: Any?] = [
+            "id": callId,
+            "nameCaller": callerName,
+            "handle": handle,
+            "avatar": avatar,
+            "type": typeValue,
+            "extra": extra
+        ]
+        let data = Data(args: args)
+        DispatchQueue.main.async {
+            self.showCallkitIncoming(data, fromPushKit: true)
+            completion()
+        }
+    }
 }
