@@ -432,6 +432,9 @@ public class SwiftFlutterCallkitIncomingPlugin: CAPPlugin, CAPBridgedPlugin, CXP
         case "requestNotificationPermission":
             pluginCall.resolve()
             break
+         case "requestFullIntentPermission":
+            pluginCall.resolve()
+            break
         case "hideCallkitIncoming":
             pluginCall.resolve()
             break

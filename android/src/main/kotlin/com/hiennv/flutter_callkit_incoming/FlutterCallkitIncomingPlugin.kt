@@ -714,6 +714,9 @@ class FlutterCallkitIncomingPlugin : Plugin() {
                     }
                     callkitNotificationManager?.requestNotificationPermission(activity, map)
                 }
+                "requestFullIntentPermission" -> {
+                    callkitNotificationManager?.requestFullIntentPermission(activity)
+                }
                 // EDIT - clear the incoming notification/ring (after accept/decline/timeout)
                 "hideCallkitIncoming" -> {
                     val data = Data(options ?: HashMap())

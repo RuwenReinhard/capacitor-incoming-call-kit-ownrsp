@@ -430,6 +430,7 @@ export type MethodNames =  |
   'getDevicePushTokenVoIP' |
   'silenceEvents' |
   'requestNotificationPermission' |
+  'requestFullIntentPermission' |
   'hideCallkitIncoming' |
   'endNativeSubsystemOnly' |
   'setAudioRoute'
@@ -506,10 +507,10 @@ export interface AndroidParams {
   /// Using custom notification small on some devices clipped out in android.
   isCustomSmallExNotification?: boolean
 
-  /// Show logo app on incoming call screen.
+  /// Show logo app inside full screen.
   isShowLogo?: boolean
 
-  /// Show call id on incoming call screen.
+  /// Show call id app inside full screen.
   isShowCallID?: boolean
 
   /// File name ringtone, put file into /android/app/src/main/res/raw/ringtone_default.pm3 -> value: `ringtone_default.pm3`
@@ -524,7 +525,7 @@ export interface AndroidParams {
   /// Color used in button/text on notification.
   actionColor?: string
 
-  /// Color used for the text in the incoming call notification.
+  /// Color used for the text in the full screen notification
   textColor?: string
 
   /// Notification channel name of incoming call.
