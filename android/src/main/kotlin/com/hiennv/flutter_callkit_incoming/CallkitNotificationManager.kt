@@ -584,10 +584,6 @@ class CallkitNotificationManager(private val context: Context) {
         }
     }
 
-    fun requestFullIntentPermission(activity: Activity?) {
-        // No-op: Full-screen intent removed in favor of Heads-Up notification (Play policy).
-    }
-
     fun onRequestPermissionsResult(activity: Activity?, requestCode: Int, grantResults: IntArray) {
         when (requestCode) {
             PERMISSION_NOTIFICATION_REQUEST_CODE -> {

@@ -133,6 +133,6 @@ onMethod(options: { options: string; methodName: MethodNames; parsedOptions: Cal
 
 #### MethodNames
 
-<code>'showCallkitIncoming' | 'checkIsVersionOk' | 'sendPendingAcceptEvent' | 'showCallkitIncomingSilently' | 'showMissCallNotification' | 'startCall' | 'muteCall' | 'holdCall' | 'isMuted' | 'endCall' | 'callConnected' | 'endAllCalls' | 'activeCalls' | 'getDevicePushTokenVoIP' | 'silenceEvents' | 'requestNotificationPermission' | 'requestFullIntentPermission' | 'hideCallkitIncoming' | 'endNativeSubsystemOnly' | 'setAudioRoute'</code>
+<code>'showCallkitIncoming' | 'checkIsVersionOk' | 'sendPendingAcceptEvent' | 'showCallkitIncomingSilently' | 'showMissCallNotification' | 'startCall' | 'muteCall' | 'holdCall' | 'isMuted' | 'endCall' | 'callConnected' | 'endAllCalls' | 'activeCalls' | 'getDevicePushTokenVoIP' | 'silenceEvents' | 'requestNotificationPermission' | 'hideCallkitIncoming' | 'endNativeSubsystemOnly' | 'setAudioRoute'</code>
 
 </docgen-api>
