@@ -14,7 +14,6 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.Drawable
-import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
@@ -123,9 +122,19 @@ class CallkitNotificationManager(private val context: Context) {
             )
         )
         notificationBuilder.setOnlyAlertOnce(false)
-        val incomingSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-        notificationBuilder.setSound(incomingSoundUri)
-        notificationBuilder.setContentIntent(getAppPendingIntent(notificationId, data))
+        val isShowFullLockedScreen = data.getBoolean(
+            CallkitConstants.EXTRA_CALLKIT_IS_SHOW_FULL_LOCKED_SCREEN,
+            true
+        )
+        notificationBuilder.setSound(null) // Klingelton spielt CallkitSoundPlayerService
+        if (isShowFullLockedScreen) {
+            notificationBuilder.setFullScreenIntent(
+                getActivityPendingIntent(notificationId, data), true
+            )
+        }
+        // Bei isShowFullLockedScreen == false: keine Full-Screen-Activity, nur Heads-Up
+        // (CATEGORY_CALL + PRIORITY_MAX + IMPORTANCE_HIGH zeigen die Notification sichtbar)
+        notificationBuilder.setContentIntent(getActivityPendingIntent(notificationId, data))
         notificationBuilder.setDeleteIntent(getTimeOutPendingIntent(notificationId, data))
         val typeCall = data.getInt(CallkitConstants.EXTRA_CALLKIT_TYPE, -1)
         var smallIcon = context.applicationInfo.icon
@@ -456,16 +465,11 @@ class CallkitNotificationManager(private val context: Context) {
         missedCallChannelName: String,
     ) {
         val incomingVibrationPattern = longArrayOf(0L, 1000L, 500L, 1000L)
-        val incomingSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-        val incomingAudioAttributes = AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
-            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-            .build()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             getNotificationManager().apply {
                 var channelCall = getNotificationChannel(NOTIFICATION_CHANNEL_ID_INCOMING)
                 if (channelCall != null) {
-                    channelCall.setSound(incomingSoundUri, incomingAudioAttributes)
+                    channelCall.setSound(null, null)
                     channelCall.enableVibration(true)
                     channelCall.vibrationPattern = incomingVibrationPattern
                 } else {
@@ -479,7 +483,7 @@ class CallkitNotificationManager(private val context: Context) {
                         lightColor = Color.RED
                         enableLights(true)
                         enableVibration(true)
-                        setSound(incomingSoundUri, incomingAudioAttributes)
+                        setSound(null, null)
                     }
                 }
                 channelCall.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
@@ -585,7 +589,12 @@ class CallkitNotificationManager(private val context: Context) {
     }
 
     fun requestFullIntentPermission(activity: Activity?) {
-        // No-op: Full-screen intent removed in favor of Heads-Up notification (Play policy).
+        if (Build.VERSION.SDK_INT > 33) {
+            val intent = Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
+                data =  Uri.fromParts("package", activity?.packageName, null)
+            }
+            activity?.startActivity(intent)
+        }
     }
 
     fun onRequestPermissionsResult(activity: Activity?, requestCode: Int, grantResults: IntArray) {
